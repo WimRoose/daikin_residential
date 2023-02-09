@@ -17,6 +17,7 @@ from .const import (
     ATTR_STATE_OFF,
     ATTR_STATE_ON,
     ATTR_TARGET_TEMPERATURE,
+    ATTR_TARGET_DEMAND_CONTROL,
     FAN_QUIET,
     SWING_OFF,
     SWING_BOTH,
@@ -328,6 +329,38 @@ class Appliance(DaikinResidentialDevice):  # pylint: disable=too-many-public-met
         return float(self.getData(ATTR_TARGET_TEMPERATURE)["maxValue"])
 
     @property
+    def max_demand_control(self):
+        """Return the maximum demand control value we are allowed to set."""
+        operationMode = self.getValue(ATTR_OPERATION_MODE)
+        if operationMode not in ["auto", "cooling", "heating"]:
+            return 100
+        return float(self.getData(ATTR_TARGET_DEMAND_CONTROL)["maxValue"])
+
+    @property
+    def min_demand_control(self):
+        """Return the minimum demand control value we are allowed to set."""
+        operationMode = self.getValue(ATTR_OPERATION_MODE)
+        if operationMode not in ["auto", "cooling", "heating"]:
+            return 100
+        return float(self.getData(ATTR_TARGET_DEMAND_CONTROL)["minValue"])
+
+    @property
+    def target_demand_control(self):
+        """Return current target demand control value."""
+        operationMode = self.getValue(ATTR_OPERATION_MODE)
+        if operationMode not in ["auto", "cooling", "heating"]:
+            return None
+        return float(self.getValue(ATTR_TARGET_DEMAND_CONTROL))
+
+    @property
+    def target_demand_control_step(self):
+        """Return demandControl step size."""
+        operationMode = self.getValue(ATTR_OPERATION_MODE)
+        if operationMode not in ["auto", "cooling", "heating"]:
+            return None
+        return float(self.getData(ATTR_TARGET_DEMAND_CONTROL)["stepValue"])
+
+    @property
     def min_temp(self):
         """Return the minimum temperature we are allowed to set."""
         operationMode = self.getValue(ATTR_OPERATION_MODE)
@@ -342,6 +375,13 @@ class Appliance(DaikinResidentialDevice):  # pylint: disable=too-many-public-met
         if operationMode not in ["auto", "cooling", "heating"]:
             return None
         return float(self.getData(ATTR_TARGET_TEMPERATURE)["stepValue"])
+
+    async def async_set_demand_control(self, value):
+        """Set new target demand control."""
+        operationMode = self.getValue(ATTR_OPERATION_MODE)
+        if operationMode not in ["auto", "cooling", "heating"]:
+            return None
+        return await self.setValue(ATTR_TARGET_DEMAND_CONTROL, value)
 
     async def async_set_temperature(self, value):
         """Set new target temperature."""
